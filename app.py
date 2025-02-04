@@ -9,15 +9,16 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from sentence_transformers import SentenceTransformer, util
 
-# Download necessary NLTK data
-nltk.download("punkt")
+# Ensure the necessary NLTK data is downloaded
+nltk_data_downloaded = False
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+    nltk_data_downloaded = True
 
 # Load SciBERT model for NLP analysis
-#model = SentenceTransformer("allenai/#scibert_scivocab_uncased")
-
-# Load model directly
-from transformers import AutoModel
-model = AutoModel.from_pretrained("allenai/scibert_scivocab_uncased")
+model = SentenceTransformer("allenai/scibert_scivocab_uncased")
 
 # Function to extract text from PDFs using pdfminer.six
 def extract_text_from_pdfs(uploaded_files):

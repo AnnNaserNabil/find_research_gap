@@ -1,120 +1,22 @@
 import streamlit as st
-import os
-import re
-import pandas as pd
-import nltk
-from nltk.tokenize import sent_tokenize
-from pdfminer.high_level import extract_text
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import LatentDirichletAllocation
-from sentence_transformers import SentenceTransformer, util
+from transformers import pipeline
 
-# Ensure the necessary NLTK data is downloaded
-nltk_data_downloaded = False
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
-    nltk_data_downloaded = True
+# Load the Hugging Face model
+model_name = "DanL/scientific-challenges-and-directions"
+model = pipeline("text-generation", model=model_name)
 
-import nltk
-import os
-
-# Set the NLTK data path to the uploaded folder
-nltk.data.path.append(os.path.join(os.getcwd(), "nltk_data"))
-
-# The rest of your code remains the same...
-
-
-# Load SciBERT model for NLP analysis
-model = SentenceTransformer("allenai/scibert_scivocab_uncased")
-
-# Function to extract text from PDFs using pdfminer.six
-def extract_text_from_pdfs(uploaded_files):
-    all_papers = []
-    
-    for uploaded_file in uploaded_files:
-        text = extract_text(uploaded_file)
-        all_papers.append({"filename": uploaded_file.name, "text": text})
-    
-    return pd.DataFrame(all_papers)
-
-# Function to preprocess text
-def preprocess_text(text):
-    text = re.sub(r'\s+', ' ', text)  # Remove extra spaces
-    text = text.lower()  # Convert to lowercase
-    sentences = sent_tokenize(text)  # Sentence tokenization
-    return " ".join(sentences)
-
-# Function for topic modeling with LDA
-def extract_topics(corpus, num_topics=5):
-    vectorizer = TfidfVectorizer(stop_words="english", max_features=5000)
-    X = vectorizer.fit_transform(corpus)
-    
-    lda = LatentDirichletAllocation(n_components=num_topics, random_state=42)
-    lda.fit(X)
-    
-    feature_names = vectorizer.get_feature_names_out()
-    topics = []
-    
-    for topic_idx, topic in enumerate(lda.components_):
-        top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]
-        topics.append(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
-    
-    return topics
-
-# Function to find research gaps using SciBERT similarity
-def find_research_gaps(corpus):
-    reference_sentences = [
-        "Future research should focus on...",
-        "This study has some limitations...",
-        "Further exploration is needed in...",
-    ]
-    
-    reference_embeddings = model.encode(reference_sentences, convert_to_tensor=True)
-    gaps = []
-    
-    for idx, text in enumerate(corpus):
-        sentences = sent_tokenize(text)
-        sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
-        
-        similarities = util.pytorch_cos_sim(sentence_embeddings, reference_embeddings)
-        max_similarities = similarities.max(dim=1)[0]
-        
-        for i, score in enumerate(max_similarities):
-            if score > 0.7:  # Threshold for identifying research gaps
-                gaps.append({"paper": idx, "sentence": sentences[i], "score": score.item()})
-    
-    return pd.DataFrame(gaps)
-
-# Streamlit UI
+# Title of the app
 st.title("Research Gap Finder")
-st.write("Upload research papers (PDFs), and this app will analyze them to identify research gaps.")
 
-uploaded_files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
+# Input field for the user to describe their research area
+research_description = st.text_area("Describe your research area:")
 
-if uploaded_files:
-    st.write("Extracting text from PDFs...")
-    papers_df = extract_text_from_pdfs(uploaded_files)
-    
-    st.write("Preprocessing text...")
-    papers_df["clean_text"] = papers_df["text"].apply(preprocess_text)
-    
-    st.write("Performing topic modeling...")
-    topics = extract_topics(papers_df["clean_text"])
-    st.write("### Identified Topics:")
-    for topic in topics:
-        st.write(topic)
-    
-    st.write("Finding research gaps...")
-    research_gaps_df = find_research_gaps(papers_df["clean_text"])
-    
-    if not research_gaps_df.empty:
-        st.write("### Potential Research Gaps:")
-        st.dataframe(research_gaps_df)
+# Button to generate results
+if st.button("Find Research Gap"):
+    if research_description:
+        # Use the model to generate suggestions for research gaps
+        result = model(research_description, max_length=200)
+        st.write("Research Gaps:")
+        st.write(result[0]['generated_text'])
     else:
-        st.write("No significant research gaps found.")
-
-    # Option to download results
-    csv = research_gaps_df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download Research Gaps as CSV", csv, "research_gaps.csv", "text/csv")
+        st.error("Please enter a description of your research area.")

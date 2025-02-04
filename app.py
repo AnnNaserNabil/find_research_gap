@@ -1,10 +1,10 @@
 import streamlit as st
-import fitz  # PyMuPDF for extracting text
 import os
 import re
 import pandas as pd
 import nltk
 from nltk.tokenize import sent_tokenize
+from pdfminer.high_level import extract_text
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from sentence_transformers import SentenceTransformer, util
@@ -12,16 +12,15 @@ from sentence_transformers import SentenceTransformer, util
 # Download necessary NLTK data
 nltk.download("punkt")
 
-# Initialize the BERT model
+# Load SciBERT model for NLP analysis
 model = SentenceTransformer("allenai/scibert_scivocab_uncased")
 
-# Function to extract text from PDFs
+# Function to extract text from PDFs using pdfminer.six
 def extract_text_from_pdfs(uploaded_files):
     all_papers = []
     
     for uploaded_file in uploaded_files:
-        doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
-        text = "".join([page.get_text() for page in doc])
+        text = extract_text(uploaded_file)
         all_papers.append({"filename": uploaded_file.name, "text": text})
     
     return pd.DataFrame(all_papers)
@@ -50,7 +49,7 @@ def extract_topics(corpus, num_topics=5):
     
     return topics
 
-# Function to find research gaps
+# Function to find research gaps using SciBERT similarity
 def find_research_gaps(corpus):
     reference_sentences = [
         "Future research should focus on...",

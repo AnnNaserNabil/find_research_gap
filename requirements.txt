@@ -1,8 +1,7 @@
+pymupdf==1.22.5
 streamlit
-pymupdf
 pandas
 nltk
 scikit-learn
 gensim
 sentence-transformers
-fitz

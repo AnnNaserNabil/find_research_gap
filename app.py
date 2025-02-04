@@ -17,6 +17,15 @@ except LookupError:
     nltk.download("punkt")
     nltk_data_downloaded = True
 
+import nltk
+import os
+
+# Set the NLTK data path to the uploaded folder
+nltk.data.path.append(os.path.join(os.getcwd(), "nltk_data"))
+
+# The rest of your code remains the same...
+
+
 # Load SciBERT model for NLP analysis
 model = SentenceTransformer("allenai/scibert_scivocab_uncased")
 

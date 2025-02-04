@@ -1,7 +1,9 @@
-streamlit 
-pdfminer.six 
-pandas 
-nltk 
-scikit-learn 
-gensim 
+streamlit
+pdfminer.six
+pandas
+nltk
+scikit-learn
+gensim
 sentence-transformers
+torch
+transformers

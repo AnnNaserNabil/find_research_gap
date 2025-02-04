@@ -13,7 +13,11 @@ from sentence_transformers import SentenceTransformer, util
 nltk.download("punkt")
 
 # Load SciBERT model for NLP analysis
-model = SentenceTransformer("allenai/scibert_scivocab_uncased")
+#model = SentenceTransformer("allenai/#scibert_scivocab_uncased")
+
+# Load model directly
+from transformers import AutoModel
+model = AutoModel.from_pretrained("allenai/scibert_scivocab_uncased")
 
 # Function to extract text from PDFs using pdfminer.six
 def extract_text_from_pdfs(uploaded_files):
